@@ -1,22 +1,3 @@
-# RESTQL
-
-This package provides a collection of query builders that generate SQL queries for various databases (SurrealDB, PostgreSQL, MySQL, and SQLite). It allows you to convert RESTful HTTP requests into native database queries.
-
-The current version of the package is adopted from the [Go-REST](https://github.com/rest-go/rest) project. The main purpose of this package is to provide a more generic and flexible way to generate SQL queries for different databases while still having to do the db connection and query execution part yourself.
-
-## Note (about SurrealDB)
-
-The SurrealDB query builder is currently a work in progress and is not yet fully tested.
-
-## Installation
-
-```bash
-go get github.com/The-ForgeBase/restql
-```
-
-## Usage
-
-```go
 package main
 
 import (
@@ -84,5 +65,3 @@ func main() {
 	// start server
 	http.ListenAndServe(":8080", nil)
 }
-
-```
