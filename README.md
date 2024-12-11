@@ -6,7 +6,7 @@ The current version of the package is adopted from the [Go-REST](https://github.
 
 ## Note (about SurrealDB)
 
-The SurrealDB query builder is currently a work in progress and is not yet fully tested.
+The SurrealDB query builder is currently a work in progress and is not yet fully tested. Please use with caution.
 
 ## Installation
 
