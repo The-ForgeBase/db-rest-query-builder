@@ -84,70 +84,96 @@ func (q *URLQuery) OrderQuery() string {
 	return strings.ReplaceAll(orders[0], ".", " ")
 }
 
-// WhereQuery returns sql and args for where clause
+// WhereQuery returns the SQL WHERE clause and the associated arguments for the query.
+// It processes the query parameters from the URL and constructs the appropriate SQL conditions.
 func (q *URLQuery) WhereQuery(index uint) (newIndex uint, query string, args []any) {
-	if len(q.values) == 0 {
-		return index, "", nil
-	}
+    // Check if there are any query values. If not, return early with the current index and empty query and args.
+    if len(q.values) == 0 {
+        return index, "", nil
+    }
 
-	var queryBuilder strings.Builder
-	args = make([]any, 0, len(q.values))
-	first := true
-	for k, v := range q.values {
-		if _, ok := ReservedWords[k]; ok {
-			continue
-		}
-		for _, vv := range v {
-			vals := strings.Split(vv, ".")
-			if len(vals) != 2 {
-				continue
-			}
-			op, val := vals[0], vals[1]
-			operator, ok := Operators[op]
-			if !ok {
-				log.Warnf("unsupported op: %s", op)
-				continue
-			}
+    // Create a strings.Builder to efficiently build the SQL query string.
+    var queryBuilder strings.Builder
+    // Initialize args slice to hold the values for the SQL query placeholders.
+    args = make([]any, 0, len(q.values))
+    // A flag to determine if this is the first condition being added to the query.
+    first := true
 
-			if !first {
-				queryBuilder.WriteString(" AND ")
-			}
+    // Iterate over each key-value pair in the URL query values.
+    for k, v := range q.values {
+        // Skip reserved words that should not be included in the SQL query.
+        if _, ok := ReservedWords[k]; ok {
+            continue
+        }
+        // Iterate over each value associated with the key.
+        for _, vv := range v {
+            // Split the value by '.' to separate the operator from the actual value.
+            vals := strings.Split(vv, ".")
+            // Ensure that exactly two parts are obtained (operator and value).
+            if len(vals) != 2 {
+                continue
+            }
+            // Assign the operator and value from the split.
+            op, val := vals[0], vals[1]
+            // Check if the operator is valid by looking it up in the Operators map.
+            operator, ok := Operators[op]
+            if !ok {
+                // Log a warning if the operator is unsupported and continue to the next value.
+                log.Warnf("unsupported op: %s", op)
+                continue
+            }
 
-			column, err := q.buildColumn(k, false)
-			if err != nil {
-				return index, "", nil
-			}
-			queryBuilder.WriteString(column)
-			if op == "in" {
-				vals := strings.Split(strings.Trim(strings.Trim(val, ")"), "("), ",")
-				placeholders := make([]string, len(vals))
-				for i, v := range vals {
-					placeholders[i] = "?"
-					args = append(args, v)
-					index++
-				}
-				queryBuilder.WriteString(fmt.Sprintf(" IN (%s)", strings.Join(placeholders, ",")))
-			} else if op == "is" {
-				if strings.EqualFold(val, "true") || strings.EqualFold(val, "false") ||
-					strings.EqualFold(val, "null") {
-					queryBuilder.WriteString(operator)
-					queryBuilder.WriteString(val)
-				} else {
-					log.Warnf("unsupported is value: %s", val)
-				}
-			} else {
-				queryBuilder.WriteString(operator)
-				queryBuilder.WriteString("?")
-				// replace * to % for like operations
-				val = strings.ReplaceAll(val, "*", "%")
-				args = append(args, val)
-				index++
-			}
-			first = false
-		}
-	}
+            // If this is not the first condition, prepend ' AND ' to the query.
+            if !first {
+                queryBuilder.WriteString(" AND ")
+            }
 
-	return index, queryBuilder.String(), args
+            // Build the SQL column name using the key and append it to the query.
+            column, err := q.buildColumn(k, false)
+            if err != nil {
+                return index, "", nil
+            }
+            queryBuilder.WriteString(column)
+
+            // Handle the 'in' operator specifically.
+            if op == "in" {
+                // Remove parentheses and split the values by comma.
+                vals := strings.Split(strings.Trim(strings.Trim(val, ")"), "("), ",")
+                // Create placeholders for each value and append them to the args.
+                placeholders := make([]string, len(vals))
+                for i, v := range vals {
+                    placeholders[i] = "?"
+                    args = append(args, v)
+                    index++
+                }
+                // Append the 'IN' clause to the query with the placeholders.
+                queryBuilder.WriteString(fmt.Sprintf(" IN (%s)", strings.Join(placeholders, ",")))
+            } else if op == "is" {
+                // Handle the 'is' operator for boolean and null checks.
+                if strings.EqualFold(val, "true") || strings.EqualFold(val, "false") ||
+                    strings.EqualFold(val, "null") {
+                    queryBuilder.WriteString(operator)
+                    queryBuilder.WriteString(val)
+                } else {
+                    // Log a warning for unsupported values for the 'is' operator.
+                    log.Warnf("unsupported is value: %s", val)
+                }
+            } else {
+                // For other operators, append the operator and a placeholder.
+                queryBuilder.WriteString(operator)
+                queryBuilder.WriteString("?")
+                // Replace '*' with '%' for LIKE operations.
+                val = strings.ReplaceAll(val, "*", "%")
+                args = append(args, val)
+                index++
+            }
+            // Set the first flag to false after processing the first condition.
+            first = false
+        }
+    }
+
+    // Return the updated index, the constructed query string, and the arguments for placeholders.
+    return index, queryBuilder.String(), args
 }
 
 func (q *URLQuery) Page() (page, pageSize int) {
