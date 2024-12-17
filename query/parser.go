@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/The-ForgeBase/restql/pkg/restql/utils"
+	"github.com/The-ForgeBase/restql/utils"
 )
 
 // Default values

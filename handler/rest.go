@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/The-ForgeBase/restql/pkg/restql/query"
-	"github.com/The-ForgeBase/restql/pkg/restql/utils"
+	"github.com/The-ForgeBase/restql/query"
+	"github.com/The-ForgeBase/restql/utils"
 )
 
 // Function to check if a value is boolean and needs `IS` or `=`
