@@ -4,6 +4,10 @@ RESTQL is a flexible Go package designed to generate SQL queries for SurrealDB, 
 
 The package dynamically builds SQL queries based on HTTP request parameters, making it simple to handle complex database interactions through simple REST APIs.
 
+## Documentation
+
+[RESTQL](https://docs.routechnology.org/s/afa79f7b-7b7a-4593-81b7-b66cbb503260/doc/restql-JqDwtDYiVT)
+
 ## Features
 
 - **Dynamic Query Generation**: Generate SQL queries dynamically based on table names, filters, sorting, pagination, and more.
