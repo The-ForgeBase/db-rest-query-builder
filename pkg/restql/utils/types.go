@@ -1,7 +1,8 @@
-package sql
+package utils
 
 import (
 	"database/sql"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -16,7 +17,6 @@ var (
 	// MY: https://dev.mysql.com/doc/refman/8.0/en/data-types.html
 	// SQLITE: https://www.sqlite.org/datatype3.html
 
-	// TODO: benchmark performance of regexp match VS map access
 	// the code below could be simplified by using regexp, but declare it in a
 	// map should result in better performance in theory.
 	Types = map[string]func() any{
@@ -103,18 +103,14 @@ var (
 	}
 
 	Operators = map[string]string{
-		"eq":    " = ",
-		"ne":    " <> ",
-		"gt":    " > ",
-		"lt":    " < ",
-		"gte":   " >= ",
-		"lte":   " <= ",
-		"like":  " like ",
-		"ilike": " ilike ",
-		"is":    " is ",
-		"in":    " in ",
-		"cs":    " @> ",
-		"cd":    " <@ ",
+		"eq":   "=",
+		"ne":   "<>",
+		"gt":   ">",
+		"gte":  ">=",
+		"lt":   "<",
+		"lte":  "<=",
+		"is":   "IS",
+		"like": "LIKE",
 	}
 
 	ReservedWords = map[string]struct{}{
@@ -124,27 +120,30 @@ var (
 	}
 )
 
-func getTypeAndConverter(t string) (any, TypeConverter) {
-	t = normalize(t)
-	if f, ok := Types[t]; ok {
-		return f(), TypeConverters[t]
-	} else {
-		t = numericRegexp.ReplaceAllString(t, "${1}")
-		if f, ok := Types[t]; ok {
-			return f(), TypeConverters[t]
-		}
-	}
-
-	return Types["JSON"](), TypeConverters["JSON"]
+type ReturnQuery struct {
+	Query string
+	Args  []any
 }
 
-// normalize converts various type to standard type
-// e.g. sqlite has NVARCHAR(70), NUMERIC(10,2) will be NVARCHAR and NEMERIC
-// PG has INT4,INT8,FLOAT4 etc. will be INT, FLOAT
-func normalize(t string) string {
-	i := strings.Index(t, "(")
-	if i != -1 {
-		t = t[:i]
+// ParseQueryParam tries to convert a query parameter string to an appropriate type (int, float64, bool, or string)
+func ParseQueryParam(value string) (interface{}, error) {
+	// Check if it's a boolean
+	if strings.ToLower(value) == "true" || strings.ToLower(value) == "false" {
+		return strconv.ParseBool(value)
 	}
-	return strings.ToUpper(t)
+
+	// Check if it's an integer
+	if i, err := strconv.ParseInt(value, 0, 64); err == nil {
+		// fmt.Println("Parsed int:", i)
+		return int64(i), nil
+	}
+
+	// Check if it's a float
+	if f, err := strconv.ParseFloat(value, 64); err == nil {
+		fmt.Println("Parsed float:", f)
+		return f, nil
+	}
+
+	// Default to string if it can't be parsed as int, float, or bool
+	return value, nil
 }
